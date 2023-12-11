@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Todo List</string>
+    <string name="enter_your_todo_task">Enter your todo task</string>
+    <string name="completed">Completed</string>
+    <string name="incompleted">Incompleted</string>
+    <string name="no_result">No Result</string>
+    <string name="update">Update</string>
+</resources>
