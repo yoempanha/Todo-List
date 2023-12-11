@@ -16,28 +16,18 @@ import com.example.todolist.utils.extension.show
 import com.example.todolist.utils.extension.showKeyboard
 import com.example.todolist.utils.extension.textChanges
 import com.example.todolist.utils.preference.AppPreferenceManager
-import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.firestore.Query
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoListener {
-
-    @Inject
-    private lateinit var query: Query
 
     private lateinit var todoListAdapter: TodoListAdapter
 
@@ -153,7 +143,7 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
     private fun setupRecyclerView() {
         binding.apply {
             todoListAdapter = TodoListAdapter(this@MainActivity)
-            todoListAdapter.setOnItemClickHandler() { position, data ->
+            todoListAdapter.setItemClickHandler { position, data ->
                 viewModel.currentEditContent = data
                 viewModel.currentPos = position
                 updateButton.isEnabled = true

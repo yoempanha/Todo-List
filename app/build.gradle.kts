@@ -65,5 +65,4 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-firestore")
-    implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
 }

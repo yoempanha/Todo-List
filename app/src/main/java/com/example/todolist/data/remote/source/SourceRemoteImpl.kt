@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class SourceRemoteImpl(
-    private val firestore: FirebaseFirestore
+    firestore: FirebaseFirestore
 ) : FirebaseService {
     private val collectionName = "todo_list_content"
     private val query = firestore.collection(collectionName)
