@@ -10,7 +10,7 @@ data class TodoListContentModel(
 ) {
     override fun equals(other: Any?): Boolean {
         return if (other is TodoListContentModel) {
-            other.referenceId == referenceId
+            other.referenceId == referenceId || other.timestamp == timestamp || other.itemHashCode == itemHashCode
         } else super.equals(other)
     }
 

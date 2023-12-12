@@ -13,7 +13,11 @@ class TodoListSourceDataImpl(
 
     override suspend fun upsertTodoListContent(todoListContentModel: TodoListContentModel) {
         return withContext(Dispatchers.IO) {
-            service.upsertTodoListContent(todoListContentModel)
+            if (todoListContentModel.referenceId == null) {
+                service.insertTodoListContent(todoListContentModel)
+            } else {
+                service.updateTodoListContent(todoListContentModel)
+            }
         }
     }
 

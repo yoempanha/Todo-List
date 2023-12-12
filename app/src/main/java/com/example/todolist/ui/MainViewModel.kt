@@ -75,6 +75,10 @@ class MainViewModel @Inject constructor(
         return todoListContents.any { it.itemHashCode == dataHasCode }
     }
 
+    fun setViewLoading(isLoading: Boolean) {
+        setLoading(isLoading)
+    }
+
     override fun onCleared() {
         super.onCleared()
         job?.cancel()

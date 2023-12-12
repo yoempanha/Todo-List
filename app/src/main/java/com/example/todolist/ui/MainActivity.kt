@@ -22,7 +22,6 @@ import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -49,6 +48,7 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
         super.onCreate(savedInstanceState)
         setupRecyclerView()
         setupListener()
+        viewModel.setViewLoading(true)
     }
 
     override fun onStart() {
@@ -71,6 +71,7 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                         DocumentChange.Type.REMOVED -> todoListAdapter.remove(data)
                     }
                 }
+                viewModel.setViewLoading(false)
             }
     }
 
@@ -113,15 +114,14 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
         binding.apply {
             todoListEditText.setOnEditorActionListener { editText, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    if (editText.text.isNotBlank() &&
-                        editText.text.toString().lowercase() != "empty"
-                    ) {
+                    val message = editText.text.toString().trim()
+                    if (message.isNotBlank() && message.lowercase() != "empty") {
                         val users = listOf(AppPreferenceManager.instance.deviceId)
                         val data = TodoListContentModel(
-                            description = editText.text.toString(),
+                            description = message,
                             isCompleted = false,
                             timestamp = System.currentTimeMillis().toString(),
-                            itemHashCode = editText.text.toString().hashCode(),
+                            itemHashCode = message.hashCode(),
                             users = users
                         )
                         if (viewModel.isDuplicate(data.itemHashCode)) {
@@ -195,10 +195,10 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
 
     private fun reset() {
         binding.apply {
+            todoListEditText.imeOptions = EditorInfo.IME_ACTION_DONE
             todoListEditText.setText("")
             viewModel.currentEditContent = null
             updateButton.isEnabled = false
-            todoListEditText.imeOptions = EditorInfo.IME_ACTION_DONE
         }
     }
 

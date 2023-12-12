@@ -34,7 +34,7 @@ class SourceRemoteImpl(
         query.document(referenceId).delete().await()
     }
 
-    override suspend fun upsertTodoListContent(todoListContent: TodoListContentModel) {
+    override suspend fun insertTodoListContent(todoListContent: TodoListContentModel) {
         val content = hashMapOf(
             "description" to todoListContent.description,
             "isCompleted" to todoListContent.isCompleted,
@@ -42,22 +42,21 @@ class SourceRemoteImpl(
             "itemHashCode" to todoListContent.itemHashCode,
             "users" to todoListContent.users
         )
-        val referenceId = todoListContent.referenceId.orEmpty()
-        if (referenceId.isNotEmpty()) {
-            val documentSnapshot = query.document(referenceId)
-                .get()
-                .await()
-            if (documentSnapshot.exists()) {
-                query.document(referenceId).update(content).await()
-            } else {
-                val id = query.add(content).await().id
-                content["referenceId"] = id
-                query.document(id).update(content).await()
-            }
-        } else {
-            val id = query.add(content).await().id
-            content["referenceId"] = id
-            query.document(id).update(content).await()
-        }
+        val referenceId = query.add(content).await().id
+        content["referenceId"] = referenceId
+        query.document(referenceId).update(content).await()
+    }
+
+    override suspend fun updateTodoListContent(todoListContent: TodoListContentModel) {
+        val referenceId = todoListContent.referenceId ?: return
+        val content = hashMapOf(
+            "description" to todoListContent.description,
+            "isCompleted" to todoListContent.isCompleted,
+            "timestamp" to todoListContent.timestamp,
+            "itemHashCode" to todoListContent.itemHashCode,
+            "users" to todoListContent.users,
+            "referenceId" to referenceId
+        )
+        query.document(referenceId).update(content).await()
     }
 }
