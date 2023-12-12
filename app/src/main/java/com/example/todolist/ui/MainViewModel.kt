@@ -25,23 +25,17 @@ class MainViewModel @Inject constructor(
     val todoList: LiveData<DataState<Unit>> = _todoList
 
     private var _todoListContents: MutableList<TodoListContentModel> = mutableListOf()
-    val todoListContents: List<TodoListContentModel> get() = _todoListContents.distinctBy { it.hashCode }
+    val todoListContents: List<TodoListContentModel> get() = _todoListContents
 
     val isEmpty: Boolean get() = todoListContents.isEmpty()
 
-    var currentPos: Int = -1
     var currentEditContent: TodoListContentModel? = null
 
     private var job: Job? = null
 
-    init {
-        getTodoList()
-    }
-
-    private fun getTodoList(data: String = "", isNeedLoading: Boolean = true) {
+    fun filter(data: String = "") {
         job?.cancel()
         job = viewModelScope.launch {
-            setLoading(isNeedLoading)
             when (val result = getTodoListUseCase.execute(data)) {
                 is BaseResult.Success -> {
                     _todoListContents = result.data.toMutableList()
@@ -52,56 +46,33 @@ class MainViewModel @Inject constructor(
                     _todoList.value = DataState.Failure(result.error)
                 }
             }
-            setLoading(false)
         }
     }
 
-    fun deleteTodoListContent(data: TodoListContentModel, position: Int) {
+    fun deleteTodoListContent(data: TodoListContentModel) {
         viewModelScope.launch {
             setLoading(true)
-            when (val result = deleteTodoListContentUseCase.execute(data)) {
-                is BaseResult.Success -> {
-                    if (_todoListContents.isNotEmpty()) {
-                        _todoListContents.removeAt(position)
-                    }
-                    _todoList.value = DataState.Success(Unit)
-                }
-
-                is BaseResult.Failure -> {
-                    _todoList.value = DataState.Failure(result.error)
-                }
+            val result = deleteTodoListContentUseCase.execute(data)
+            if (result is BaseResult.Failure) {
+                _todoList.value = DataState.Failure(result.error)
             }
             setLoading(false)
         }
     }
 
-    fun upsertTodoListContent(data: TodoListContentModel, position: Int) {
+    fun upsertTodoListContent(data: TodoListContentModel) {
         viewModelScope.launch {
             setLoading(true)
-            when (val result = upsertTodoListContentUseCase.execute(data)) {
-                is BaseResult.Success -> {
-                    if (_todoListContents.size - 1 >= position && position != -1) {
-                        _todoListContents[position] = result.data
-                    } else {
-                        _todoListContents.add(result.data)
-                    }
-                    _todoList.value = DataState.Success(Unit)
-                }
-
-                is BaseResult.Failure -> {
-                    _todoList.value = DataState.Failure(result.error)
-                }
+            val result = upsertTodoListContentUseCase.execute(data)
+            if (result is BaseResult.Failure) {
+                _todoList.value = DataState.Failure(result.error)
             }
             setLoading(false)
         }
-    }
-
-    fun filter(data: String = "") {
-        getTodoList(data = data, isNeedLoading = false)
     }
 
     fun isDuplicate(dataHasCode: Int): Boolean {
-        return todoListContents.any { it.hashCode == dataHasCode }
+        return todoListContents.any { it.itemHashCode == dataHasCode }
     }
 
     override fun onCleared() {

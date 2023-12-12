@@ -43,24 +43,21 @@ abstract class BaseRecyclerView<T>(
     }
 
     open fun add(data: T) {
+        val index = items.indexOf(data)
+        if (index != -1) return
         val startIndex = this.items.size
         this.items.add(data)
         notifyItemRangeInserted(startIndex, 1)
     }
 
-    open fun add(data: List<T>) {
-        val startIndex = this.items.size
-        this.items.addAll(data)
-        notifyItemRangeInserted(startIndex, data.size)
-    }
-
     open fun update(data: T, position: Int) {
-        items[position] = data
+        this.items[position] = data
         notifyItemChanged(position)
     }
 
     open fun update(data: T) {
         val position = items.indexOf(data)
+        if (position == -1) return
         update(data, position)
     }
 
@@ -71,6 +68,7 @@ abstract class BaseRecyclerView<T>(
 
     open fun remove(item: T) {
         val position = items.indexOf(item)
+        if (position == -1) return
         remove(position)
     }
 

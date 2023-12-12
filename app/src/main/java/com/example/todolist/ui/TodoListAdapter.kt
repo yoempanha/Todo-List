@@ -34,21 +34,6 @@ class TodoListAdapter(
         }
     }
 
-    override fun onBindViewHolder(
-        holder: RecyclerView.ViewHolder,
-        position: Int,
-        payloads: MutableList<Any>
-    ) {
-        val payload = payloads.firstOrNull()
-        if (payload != null && holder is TodoListContentViewHolder) {
-            when (payload) {
-                is Boolean -> holder.updateStatus(payload)
-            }
-            return
-        }
-        super.onBindViewHolder(holder, position, payloads)
-    }
-
     private inner class TodoListContentViewHolder(
         private val binding: ItemTodoListViewBinding
     ) : BaseViewHolder<TodoListContentModel>(binding.root) {
@@ -64,8 +49,11 @@ class TodoListAdapter(
                     onItemClickHandler?.invoke(adapterPosition, data)
                 }
                 markCompleteOrNotButton.setOnClickListener {
-                    data.isCompleted = !data.isCompleted
-                    notifyItemChanged(adapterPosition, data.isCompleted)
+                    val isCompleted = data.isCompleted
+                    listener.onUpdateStatus(
+                        data = data.copy(isCompleted = !isCompleted),
+                        adapterPosition
+                    )
                 }
             }
         }

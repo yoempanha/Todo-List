@@ -8,5 +8,5 @@ interface FirebaseService {
 
     suspend fun deleteTodoListContent(todoListContent: TodoListContentModel)
 
-    suspend fun upsertTodoListContent(todoListContent: TodoListContentModel): TodoListContentModel
+    suspend fun upsertTodoListContent(todoListContent: TodoListContentModel)
 }

@@ -10,6 +10,7 @@ import com.example.todolist.base.BaseVMActivity
 import com.example.todolist.base.DataState
 import com.example.todolist.databinding.ActivityMainBinding
 import com.example.todolist.domain.entity.TodoListContentModel
+import com.example.todolist.domain.mapper.toContentModel
 import com.example.todolist.utils.dialog.ShowDialogUtils
 import com.example.todolist.utils.extension.hideKeyboard
 import com.example.todolist.utils.extension.show
@@ -17,6 +18,12 @@ import com.example.todolist.utils.extension.showKeyboard
 import com.example.todolist.utils.extension.textChanges
 import com.example.todolist.utils.preference.AppPreferenceManager
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.toObject
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,6 +36,7 @@ import kotlinx.coroutines.flow.onEach
 @AndroidEntryPoint
 class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoListener {
 
+    private lateinit var listenerRegistration: ListenerRegistration
     private lateinit var todoListAdapter: TodoListAdapter
 
     override val viewModel: MainViewModel by viewModels()
@@ -43,18 +51,41 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
         setupListener()
     }
 
+    override fun onStart() {
+        super.onStart()
+        listenerRegistration = Firebase.firestore.collection("todo_list_content")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    showError(error)
+                    return@addSnapshotListener
+                }
+
+                snapshots?.documentChanges?.forEach {
+                    val data = it.document.toContentModel()
+                    when (it.type) {
+                        DocumentChange.Type.ADDED -> todoListAdapter.add(data)
+
+                        DocumentChange.Type.MODIFIED -> todoListAdapter.update(data)
+
+                        DocumentChange.Type.REMOVED -> todoListAdapter.remove(data)
+                    }
+                }
+            }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        listenerRegistration.remove()
+    }
+
     override fun setupObserver() {
         super.setupObserver()
         viewModel.todoList.observe(this) { state ->
             if (state == null) return@observe
             when (state) {
                 is DataState.Failure -> {
-                    if (state.error is CancellationException) return@observe
-                    Snackbar.make(
-                        binding.root,
-                        state.error.message.orEmpty(),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    showError(state.error)
                 }
 
                 is DataState.Success -> initView()
@@ -68,13 +99,13 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
             title = "Delete",
             description = "Do you want to delete this item?",
             positiveAction = {
-                viewModel.deleteTodoListContent(data = data, position = position)
+                viewModel.deleteTodoListContent(data = data)
             }
         )
     }
 
     override fun onUpdateStatus(data: TodoListContentModel, position: Int) {
-        viewModel.upsertTodoListContent(data = data, position = position)
+        viewModel.upsertTodoListContent(data = data)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -90,17 +121,17 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                             description = editText.text.toString(),
                             isCompleted = false,
                             timestamp = System.currentTimeMillis().toString(),
-                            hashCode = editText.text.toString().hashCode(),
+                            itemHashCode = editText.text.toString().hashCode(),
                             users = users
                         )
-                        if (viewModel.isDuplicate(data.hashCode)) {
+                        if (viewModel.isDuplicate(data.itemHashCode)) {
                             ShowDialogUtils.showDialog(
                                 this@MainActivity,
                                 title = "Duplication",
                                 description = "You can not add the item"
                             )
                         } else {
-                            viewModel.upsertTodoListContent(data, viewModel.currentPos)
+                            viewModel.upsertTodoListContent(data)
                             reset()
                             hideKeyboard()
                         }
@@ -115,27 +146,25 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                 .drop(1)
                 .onEach { text ->
                     val item = viewModel.currentEditContent
-                    if (item != null) {
-
-                        return@onEach
-                    }
+                    if (item != null) return@onEach
                     viewModel.filter(text.toString())
                 }.launchIn(lifecycleScope)
 
             updateButton.setOnClickListener {
+                val message = todoListEditText.text.toString()
+                if (message.isEmpty() || message.lowercase() == "empty") return@setOnClickListener
                 val data = viewModel.currentEditContent ?: return@setOnClickListener
                 viewModel.upsertTodoListContent(
                     data.copy(
-                        description = todoListEditText.text.toString(),
-                        hashCode = todoListEditText.text.toString().hashCode(),
+                        description = message,
+                        itemHashCode = message.hashCode(),
                         users = if (!data.users.contains(AppPreferenceManager.instance.deviceId)) {
                             data.users.plus(AppPreferenceManager.instance.deviceId)
                         } else data.users
-                    ),
-                    viewModel.currentPos
+                    )
                 )
-                reset()
                 hideKeyboard()
+                reset()
             }
         }
     }
@@ -143,9 +172,8 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
     private fun setupRecyclerView() {
         binding.apply {
             todoListAdapter = TodoListAdapter(this@MainActivity)
-            todoListAdapter.setItemClickHandler { position, data ->
+            todoListAdapter.setItemClickHandler { _, data ->
                 viewModel.currentEditContent = data
-                viewModel.currentPos = position
                 updateButton.isEnabled = true
                 todoListEditText.imeOptions = EditorInfo.IME_ACTION_NONE
                 todoListEditText.setText(data.description)
@@ -169,9 +197,17 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
         binding.apply {
             todoListEditText.setText("")
             viewModel.currentEditContent = null
-            viewModel.currentPos = -1
             updateButton.isEnabled = false
             todoListEditText.imeOptions = EditorInfo.IME_ACTION_DONE
         }
+    }
+
+    private fun showError(error: Throwable) {
+        if (error is CancellationException) return
+        Snackbar.make(
+            binding.root,
+            error.message.orEmpty(),
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 }

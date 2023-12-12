@@ -7,8 +7,8 @@ import com.example.todolist.domain.repository.TodoListRepository
 
 class UpsertTodoListContentUseCase(
     private val todoListRepository: TodoListRepository
-) : BaseUseCase<TodoListContentModel, TodoListContentModel>() {
-    override suspend fun execute(param: TodoListContentModel): BaseResult<TodoListContentModel> {
+) : BaseUseCase<Unit, TodoListContentModel>() {
+    override suspend fun execute(param: TodoListContentModel): BaseResult<Unit> {
         return executeAsync {
             todoListRepository.upsertTodoListContent(param)
         }
