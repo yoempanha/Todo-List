@@ -20,7 +20,6 @@ import com.example.todolist.utils.preference.AppPreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,7 +53,6 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
     override fun onStart() {
         super.onStart()
         listenerRegistration = Firebase.firestore.collection("todo_list_content")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     showError(error)
@@ -66,7 +64,10 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                     when (it.type) {
                         DocumentChange.Type.ADDED -> todoListAdapter.add(data)
 
-                        DocumentChange.Type.MODIFIED -> todoListAdapter.update(data)
+                        DocumentChange.Type.MODIFIED -> {
+                            todoListAdapter.update(data)
+                            todoListAdapter.setSelectedItem(-1)
+                        }
 
                         DocumentChange.Type.REMOVED -> todoListAdapter.remove(data)
                     }
@@ -128,13 +129,24 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                             ShowDialogUtils.showDialog(
                                 this@MainActivity,
                                 title = "Duplication",
-                                description = "You can not add the item"
+                                description = "This item have already added. Would you like to added it again",
+                                positiveAction = {
+                                    viewModel.upsertTodoListContent(data)
+                                    reset()
+                                    hideKeyboard()
+                                }
                             )
                         } else {
                             viewModel.upsertTodoListContent(data)
                             reset()
                             hideKeyboard()
                         }
+                    } else {
+                        ShowDialogUtils.showDialog(
+                            context = this@MainActivity,
+                            title = "Oh no",
+                            description = "Can not enter empty space"
+                        )
                     }
                     return@setOnEditorActionListener true
                 }
@@ -166,15 +178,23 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
                 hideKeyboard()
                 reset()
             }
+
+            cancelButton.setOnClickListener {
+                hideKeyboard()
+                reset()
+                todoListAdapter.setSelectedItem(-1)
+            }
         }
     }
 
     private fun setupRecyclerView() {
         binding.apply {
             todoListAdapter = TodoListAdapter(this@MainActivity)
-            todoListAdapter.setItemClickHandler { _, data ->
+            todoListAdapter.setItemClickHandler { position, data ->
                 viewModel.currentEditContent = data
+                todoListAdapter.setSelectedItem(position)
                 updateButton.isEnabled = true
+                cancelButton.isEnabled = true
                 todoListEditText.imeOptions = EditorInfo.IME_ACTION_NONE
                 todoListEditText.setText(data.description)
                 todoListEditText.setSelection(todoListEditText.text?.length ?: 0)
@@ -199,6 +219,7 @@ class MainActivity : BaseVMActivity<ActivityMainBinding, MainViewModel>(), TodoL
             todoListEditText.setText("")
             viewModel.currentEditContent = null
             updateButton.isEnabled = false
+            cancelButton.isEnabled = false
         }
     }
 

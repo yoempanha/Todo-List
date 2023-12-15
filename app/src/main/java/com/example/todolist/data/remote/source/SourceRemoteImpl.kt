@@ -4,7 +4,6 @@ import com.example.todolist.data.remote.model.TodoListContentDTO
 import com.example.todolist.data.remote.service.FirebaseService
 import com.example.todolist.domain.entity.TodoListContentModel
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
 class SourceRemoteImpl(
@@ -14,7 +13,7 @@ class SourceRemoteImpl(
     private val query = firestore.collection(collectionName)
 
     override suspend fun getTodoList(filter: String): List<TodoListContentDTO> {
-        val data = query.orderBy("timestamp", Query.Direction.ASCENDING).get().await().map {
+        val data = query.get().await().map {
             TodoListContentDTO(
                 description = it.data["description"]?.toString().orEmpty(),
                 isCompleted = it.data["isCompleted"]?.toString()?.toBoolean() ?: false,
@@ -26,7 +25,9 @@ class SourceRemoteImpl(
         }
         return if (filter.isEmpty()) {
             data
-        } else data.filter { it.description.contains(filter) }
+        } else data.filter {
+            it.description.contains(filter) || it.description.lowercase().contains(filter)
+        }
     }
 
     override suspend fun deleteTodoListContent(todoListContent: TodoListContentModel) {

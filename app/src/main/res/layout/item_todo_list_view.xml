@@ -32,7 +32,7 @@
             android:fontFamily="sans-serif-condensed-medium"
             android:gravity="top"
             android:paddingHorizontal="8dp"
-            android:textColor="@color/material_dynamic_neutral50"
+            android:textColor="@color/black"
             android:textSize="16sp"
             tools:text="Hi how are you?" />
 
@@ -44,7 +44,7 @@
             android:background="@null"
             android:padding="8dp"
             android:src="@drawable/ic_round_edit"
-            android:tint="@color/material_dynamic_neutral50" />
+            android:tint="@color/black" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/deleteButton"
@@ -54,7 +54,7 @@
             android:background="@null"
             android:padding="8dp"
             android:src="@drawable/ic_round_delete"
-            android:tint="@color/material_dynamic_neutral50" />
+            android:tint="@color/black" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 

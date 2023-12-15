@@ -5,4 +5,5 @@
     <string name="incompleted">Incompleted</string>
     <string name="no_result">No Result</string>
     <string name="update">Update</string>
+    <string name="cancel">Cancel</string>
 </resources>

@@ -31,6 +31,8 @@ class MainViewModel @Inject constructor(
 
     var currentEditContent: TodoListContentModel? = null
 
+    var selectedItems: Int = -1
+
     private var job: Job? = null
 
     fun filter(data: String = "") {

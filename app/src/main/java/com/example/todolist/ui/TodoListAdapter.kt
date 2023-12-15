@@ -3,6 +3,7 @@ package com.example.todolist.ui
 import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.todolist.R
 import com.example.todolist.base.adapter.BaseRecyclerView
@@ -13,6 +14,13 @@ import com.example.todolist.domain.entity.TodoListContentModel
 class TodoListAdapter(
     private val listener: TodoListener
 ) : BaseRecyclerView<TodoListContentModel>() {
+
+    private var selectedItem: Int = -1
+
+    fun setSelectedItem(position: Int) {
+        selectedItem = position
+        notifyItemChanged(position)
+    }
 
     override fun onCreateItemViewHolder(
         layoutInflater: LayoutInflater,
@@ -42,6 +50,7 @@ class TodoListAdapter(
             binding.apply {
                 title.text = data.description
                 updateStatus(data.isCompleted)
+                updateTitleColor(selectedItem == adapterPosition)
                 deleteButton.setOnClickListener {
                     listener.onDelete(data = data, position = adapterPosition)
                 }
@@ -71,8 +80,21 @@ class TodoListAdapter(
                 if (isCompleted) {
                     title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                 } else {
-                    title.paintFlags = title.paintFlags and  Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                    title.paintFlags = title.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 }
+            }
+        }
+
+        fun updateTitleColor(isSelected: Boolean) {
+            if (isSelected) {
+                binding.title.setTextColor(
+                    ContextCompat.getColor(
+                        itemView.context,
+                        R.color.background_color
+                    )
+                )
+            } else {
+                binding.title.setTextColor(ContextCompat.getColor(itemView.context, R.color.black))
             }
         }
     }

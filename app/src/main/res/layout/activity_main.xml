@@ -27,7 +27,7 @@
             android:paddingHorizontal="16dp"
             android:paddingVertical="16dp"
             android:textColor="@color/black"
-            android:textColorHint="@color/material_dynamic_neutral50" />
+            android:textColorHint="@color/black" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/updateButton"
@@ -38,6 +38,16 @@
             android:fontFamily="sans-serif-condensed-medium"
             android:paddingVertical="4dp"
             android:text="@string/update" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:enabled="false"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:paddingVertical="4dp"
+            android:text="@string/cancel" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 

@@ -4,8 +4,6 @@ import com.example.todolist.domain.base.BaseResult
 import com.example.todolist.domain.base.BaseUseCase
 import com.example.todolist.domain.entity.TodoListContentModel
 import com.example.todolist.domain.repository.TodoListRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class DeleteTodoListContentUseCase(
     private val todoListRepository: TodoListRepository
